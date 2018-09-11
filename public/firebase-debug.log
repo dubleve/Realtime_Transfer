@@ -1,0 +1,18 @@
+[debug] [2018-09-04T04:22:12.416Z] ----------------------------------------------------------------------
+[debug] [2018-09-04T04:22:12.436Z] Command:       /usr/bin/node /usr/bin/firebase deploy
+[debug] [2018-09-04T04:22:12.438Z] CLI Version:   4.2.1
+[debug] [2018-09-04T04:22:12.439Z] Platform:      linux
+[debug] [2018-09-04T04:22:12.439Z] Node Version:  v8.11.4
+[debug] [2018-09-04T04:22:12.440Z] Time:          Tue Sep 04 2018 05:22:12 GMT+0100 (BST)
+[debug] [2018-09-04T04:22:12.440Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2018-09-04T04:22:12.517Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2018-09-04T04:22:12.519Z] > authorizing via signed-in user
+[debug] [2018-09-04T04:22:12.537Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/projects/pnu-dubleve  
+ 
+[debug] [2018-09-04T04:22:12.863Z] Error: getaddrinfo EAI_AGAIN admin.firebase.com:443
+    at Object._errnoException (util.js:992:11)
+    at errnoException (dns.js:55:15)
+    at GetAddrInfoReqWrap.onlookup [as oncomplete] (dns.js:92:26)
+[error] 
+[error] Error: Server Error. getaddrinfo EAI_AGAIN admin.firebase.com:443
