@@ -5,7 +5,7 @@ import time
 import sys
 import signal
 import os
-
+from multiprocessing import Process, Queue
 
 adc = MCP3208()
 
@@ -23,13 +23,13 @@ f=open(fname, "w")
 
 s_buff = ''
 r_buff = list()
-room_buff = list()
+#room_buff = list()
 
 ret_flag = False # Ture: complete, False: keep going!
 
 
 
-def sender():
+def sender(input, output):
 	while True:
 		try:
 			dtime = time.time()-start_time
@@ -64,8 +64,8 @@ def sender():
 
 						print "s_buff: ", s_buff
 
-#						output.put(s_buff)
-						room_buff.append(s_buff)
+						output.put(s_buff)
+#						room_buff.append(s_buff)
 
 						del s_buff[:]
 						cnt = 0
@@ -98,9 +98,9 @@ if __name__ == '__main__':
 	sr = 0
 	cnt = 0
 	data = ''
-#	output = ''
+	output = Queue()
 
-#	p_send = Process(target=sender, args=(output))
+	p_send = Process(target=sender, args=("sender", output))
 
 	buff = list() # buffer that collects datas(more than 100 datas)			
 #	s_buff = list() # buffer for sending datas
@@ -110,7 +110,7 @@ if __name__ == '__main__':
 
 	start_time = time.time()
 
-	sender()
+	p_send.start()
 
 #	cam = picamera.PiCamera()
 #	cam.resolution = (320,240)
