@@ -24,6 +24,8 @@ firebase = firebase.FirebaseApplication('https://pnu-dubleve.firebaseio.com')
 
 adc = MCP3208()
 
+pid = os.fork()
+
 g_data = " "
 g_cnt = 0
 g_dtime = 0
@@ -42,9 +44,11 @@ room_buff = list()
 
 ret_flag = False # Ture: complete, False: keep going!
 
-def divide():
+def sender():
 	while True:
 		try:
+#			print("hello, I'm sender!")
+
 			dtime = time.time()-start_time
 			mydt = long(dtime*1000)/10
 			cdt = int(mydt%100)
@@ -75,7 +79,7 @@ def divide():
 
 						print "s_buff: ", s_buff
 
-						room_buff.append(s_buff)
+#						room_buff.append(s_buff)
 
 						del s_buff[:]
 						cnt = 0
@@ -96,10 +100,14 @@ def divide():
 		except KeyboardInterrupt:
 			break
 
-def ml_rnn():
+def receiver():
+
+	if ret_flag == False:
+		time.sleep(1000)
+
 	while True:
 
-		print("success!")
+#		print("Nice to meet you!")
 		X_data = room_buff[0]
 
 		X = tf.placeholder(tf.float32)
@@ -132,10 +140,13 @@ def ml_rnn():
 				else:
 					print('not exist')
 
+			ret_flag = True
+
 if __name__ == '__main__':
 	#signal.signal(signal.SIGUSR1, getpir)
 
 	#os.kill(os.getpid(),signal.SIGUSR1)
+	pid = os.fork()
 
 	mydt = 0
 	pdt = 0
@@ -143,8 +154,8 @@ if __name__ == '__main__':
 	cnt = 0
 	data = ''
 
-	p_divide = Process(target=divide)
-	p_ml_rnn = Process(target=ml_rnn)
+	p_send = Process(target=sender)
+	p_recv = Process(target=receiver)
 
 #	cam = picamera.PiCamera()
 #	cam.resolution = (320,240)
@@ -162,14 +173,22 @@ if __name__ == '__main__':
 
 	start_time = time.time()
 
-	p_divide.start()
-	p_divide.join()
-	print "ret_flag(out)", ret_flag
+	p_send.start()
+	p_recv.start()
 
-	if ret_flag == True:
-		print "ret_flag(in)", ret_flag
-		p_ml_rnn.start()
-		p_ml_rnn.join()
+	# if pid == 0:
+	# 	p_send.start()
+	# 	print "ret_flag(out)", ret_flag
+
+
+	# else:
+	# 	p_recv.start()
+	# 	if ret_flag == True:
+	# 		print "ret_flag(in)", ret_flag
+	# 		p_recv.start()
+
+	p_send.join()	
+	p_recv.join()
 
 #	cam.stop_preview()
 #	cam.stop_recording()
