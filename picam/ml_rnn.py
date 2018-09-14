@@ -3,7 +3,7 @@ import time
 import sys
 import signal
 import os
-from get_realtime import s_buff
+from div import room_buff
 
 import tensorflow as tf
 import pandas as pd
@@ -23,14 +23,18 @@ firebase = firebase.FirebaseApplication('https://pnu-dubleve.firebaseio.com')
 
 r_buff = list()
 
+exist = "exist"
+not_exist = "not exist"
+
+def receiver():
+	return null
+
 while True:
 
-	"""
-	Room for modifying the code under this line.
-	"""
-	r_buff.append(map(int, s_buff.split())) # It is a not accurate code. It must add `synchronizing between r_buff and s_buff`
-	print "r_buff: ", r_buff
-	X_data = r_buff[0]
+	print("Executing . . . !")
+	X_data = room_buff[0]
+#	X_data = [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+#	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]
 
 	X = tf.placeholder(tf.float32)
 
@@ -51,21 +55,17 @@ while True:
 
 		ckpt_path = saver.restore(sess, tf.train.latest_checkpoint("./model"))
 		init_op = tf.global_variables_initializer()
-
 		sess.run(init_op)
 		predictions = sess.run(Y, feed_dict={X:X_data})
 
 		print(predictions)
 
+		result_status = firebase.put('Results/Results_01', 'Status', json.dumps(predictions, cls=NumpyEncoder))
+
 		for i in range(len(predictions)):
 			if str(predictions[i]) == "[1. 0.]":
-				print('exist')
+				result_who = firebase.put('Results/Results_01', 'Who', exist)
+				print(exist)
 			else:
-				print('not exist')
-
-		"""
-		Room for implementing the sending code from here to database
-		"""
-
-	del r_buff[0]
-
+				result_who = firebase.put('Results/Results_01', 'Who', not_exist)
+				print(not_exist)

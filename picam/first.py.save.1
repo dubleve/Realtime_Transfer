@@ -94,7 +94,48 @@ if __name__ == '__main__':
 
             print("buff: " + str(buff) + ", time: " + str(dt.datetime.now()))
 
-            if(cnt%100==0):
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if(cnt%100==0):
 				#print("successfully")
               print "cnt", cnt
 
@@ -119,7 +160,7 @@ if __name__ == '__main__':
 
                #   firebase.put('Results/test', 'result', json.dumps(predictions, cls=NumpyEncoder))
 
-               # Insert '\n' to PIR sensor data
+               # Insert '\n' to PIR sensor data               
 #               data += "\n"
 #         cam.annotate_text = (dt.datetime.now().strftime('%m-%d %H:%M:%S.%f')[:-4]
 #         + " sr : " + str(round(sr, 1)) + " sn : " + str(cnt) + "\npir : " + data[0:30])
@@ -128,7 +169,7 @@ if __name__ == '__main__':
             f.write(data)
             data = ""
             #print "sr", sr, "dt", str(dt.datetime.now())
-
+            
          avail = g_disk.f_bsize * g_disk.f_bavail
 
          if avail < (g_first_avail * 3 / 5) :

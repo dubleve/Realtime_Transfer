@@ -5,22 +5,7 @@ import time
 import sys
 import signal
 import os
-from multiprocessing import Process
-#6
-import tensorflow as tf
-import pandas as pd
-import json
-import numpy as np
-from firebase import firebase
-#
-class NumpyEncoder(json.JSONEncoder):
-		def default(self, obj):
-			if isinstance(obj, np.ndarray):
-				return obj.tolist()
-			return json.JSONEncoder.default(self, obj)
 
-#Import Datasets & set datasets
-firebase = firebase.FirebaseApplication('https://pnu-dubleve.firebaseio.com')
 
 adc = MCP3208()
 
@@ -42,7 +27,9 @@ room_buff = list()
 
 ret_flag = False # Ture: complete, False: keep going!
 
-def divide():
+
+
+def sender():
 	while True:
 		try:
 			dtime = time.time()-start_time
@@ -73,8 +60,11 @@ def divide():
 							buff.pop()
 						buff.reverse()
 
+						s_buff = sum(s_buff, []) # 2 dimension list to 1 dimension list
+
 						print "s_buff: ", s_buff
 
+#						output.put(s_buff)
 						room_buff.append(s_buff)
 
 						del s_buff[:]
@@ -84,6 +74,8 @@ def divide():
 		#			+ " sr : " + str(round(sr, 1)) + " sn : " + str(cnt) + "\npir : " + data[0:30])
 
 			if cdt==0: # write datas in file for 1 second
+				global data
+				global sr
 				f.write(data)
 				data = ""
 				print "sr", sr, "dt", str(dt.datetime.now())
@@ -96,42 +88,6 @@ def divide():
 		except KeyboardInterrupt:
 			break
 
-def ml_rnn():
-	while True:
-
-		print("success!")
-		X_data = room_buff[0]
-
-		X = tf.placeholder(tf.float32)
-
-		W1 = tf.Variable(tf.random_uniform([100, 50], -1., 1.))
-		W2 = tf.Variable(tf.random_uniform([50, 2], -1., 1.))
-		b1 = tf.Variable(tf.zeros([50]))
-		b2 = tf.Variable(tf.zeros([2]))
-
-		L1 = tf.add(tf.matmul(X, W1), b1)
-		Y = tf.nn.softmax(tf.matmul(L1, W2) + b2)
-
-		sess = tf.Session()
-
-		#tf.reset_default_graph()
-		with tf.Session() as sess:
-			saver = tf.train.Saver()
-			sess.run(tf.global_variables_initializer())
-
-			ckpt_path = saver.restore(sess, tf.train.latest_checkpoint("./model"))
-			init_op = tf.global_variables_initializer()
-			sess.run(init_op)
-			predictions = sess.run(Y, feed_dict={X:X_data})
-
-			print(predictions)
-
-			for i in range(len(predictions)):
-				if str(predictions[i]) == "[1. 0.]":
-					print('exist')
-				else:
-					print('not exist')
-
 if __name__ == '__main__':
 	#signal.signal(signal.SIGUSR1, getpir)
 
@@ -142,17 +98,9 @@ if __name__ == '__main__':
 	sr = 0
 	cnt = 0
 	data = ''
+#	output = ''
 
-	p_divide = Process(target=divide)
-	p_ml_rnn = Process(target=ml_rnn)
-
-#	cam = picamera.PiCamera()
-#	cam.resolution = (320,240)
-#	cam.framerate = 10
-#	cam.start_recording('video'+str(dt.datetime.now())+'.h264')
-#	cam.start_preview()
-#	cam.annotate_background = picamera.Color('black')
-#	cam.annotate_text_size = 10
+#	p_send = Process(target=sender, args=(output))
 
 	buff = list() # buffer that collects datas(more than 100 datas)			
 #	s_buff = list() # buffer for sending datas
@@ -162,14 +110,15 @@ if __name__ == '__main__':
 
 	start_time = time.time()
 
-	p_divide.start()
-	p_divide.join()
-	print "ret_flag(out)", ret_flag
+	sender()
 
-	if ret_flag == True:
-		print "ret_flag(in)", ret_flag
-		p_ml_rnn.start()
-		p_ml_rnn.join()
+#	cam = picamera.PiCamera()
+#	cam.resolution = (320,240)
+#	cam.framerate = 10
+#	cam.start_recording('video'+str(dt.datetime.now())+'.h264')
+#	cam.start_preview()
+#	cam.annotate_background = picamera.Color('black')
+#	cam.annotate_text_size = 10
 
 #	cam.stop_preview()
 #	cam.stop_recording()
