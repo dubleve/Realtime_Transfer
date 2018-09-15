@@ -5,12 +5,13 @@ import time
 import sys
 import signal
 import os
+import sysv_ipc
 from multiprocessing import Process
 #6
-import tensorflow as tf
-import pandas as pd
+# import tensorflow as tf
+# import pandas as pd
 import json
-import numpy as np
+# import numpy as np
 from firebase import firebase
 #
 class NumpyEncoder(json.JSONEncoder):
@@ -35,118 +36,143 @@ g_dt = 0
 g_disk = os.statvfs("/")
 g_first_avail = g_disk.f_bsize * g_disk.f_bavail
 
-fname = "data"+str(dt.datetime.now())+".txt"
-f=open(fname, "w")
+#fname = "data"+str(dt.datetime.now())+".txt"
+#f=open(fname, "w")
 
 s_buff = ''
 r_buff = list()
-room_buff = list()
 
 ret_flag = False # Ture: complete, False: keep going!
 
 def sender():
-	while True:
-		try:
+
+	shared_data = sysv_ipc.SharedMemory(1234, flags=01000, size=4, mode=0600)
+
+	num = adc.read(6)
+	shared_data.write(str(num))
+
+	print "out_data:", shared_data
+	# while True:
+	# 	print("hello, I'm sender!")
+
+# 		try:
 #			print("hello, I'm sender!")
 
-			dtime = time.time()-start_time
-			mydt = long(dtime*1000)/10
-			cdt = int(mydt%100)
+# 			time.sleep(1000)
 
-			global pdt
-			global cnt
+# 			dtime = time.time()-start_time
+# 			mydt = long(dtime*1000)/10
+# 			cdt = int(mydt%100)
 
-			if cdt!=pdt: # read datas for 0.01 second
-				read = adc.read(6)
-				sr = cnt/dtime
-				#data = data + str(read) + " "
-				data = str(read)
-				pdt = cdt
+# 			global pdt
+# 			global cnt
+
+# 			if cdt!=pdt: # read datas for 0.01 second
+# 				read = adc.read(6)
+# 				sr = cnt/dtime
+# 				#data = data + str(read) + " "
+# 				data = str(read)
+# 				pdt = cdt
 					
-				buff.append(map(int, data.split()))
-				print "num of buff: ", len(buff), ", cnt: ", cnt
+# 				buff.append(map(int, data.split()))
+# 				print "num of buff: ", len(buff), ", cnt: ", cnt
 						
-				if len(buff)>=100 :
-					ret_flag = True
-					cnt = cnt + 1
-					s_buff = buff[first_idx:last_idx]
-					if cnt==15: # for 0.15 second
-							# for removing first 15 datas of list
-						buff.reverse()
-						for i in range(15):
-							buff.pop()
-						buff.reverse()
+# 				if len(buff)>=100 :
+# 					ret_flag = True
+# 					cnt = cnt + 1
+# 					s_buff = buff[first_idx:last_idx]
+# 					if cnt==15: # for 0.15 second
+# 							# for removing first 15 datas of list
+# 						buff.reverse()
+# 						for i in range(15):
+# 							buff.pop()
+# 						buff.reverse()
 
-						print "s_buff: ", s_buff
+# 						s_buff = sum(s_buff, [])
+# 						print "s_buff: ", s_buff
+# 						room_buff.append(s_buff)
 
-#						room_buff.append(s_buff)
-
-						del s_buff[:]
-						cnt = 0
+# 						del s_buff[:]
+# 						cnt = 0
 					
-		#			cam.annotate_text = (dt.datetime.now().strftime('%m-%d %H:%M:%S.%f')[:-4]
-		#			+ " sr : " + str(round(sr, 1)) + " sn : " + str(cnt) + "\npir : " + data[0:30])
+# 		#			cam.annotate_text = (dt.datetime.now().strftime('%m-%d %H:%M:%S.%f')[:-4]
+# 		#			+ " sr : " + str(round(sr, 1)) + " sn : " + str(cnt) + "\npir : " + data[0:30])
 
-			if cdt==0: # write datas in file for 1 second
-				f.write(data)
-				data = ""
-				print "sr", sr, "dt", str(dt.datetime.now())
+# 			if cdt==0: # write datas in file for 1 second
+# 				f.write(data)
+# 				data = ""
+# 				print "sr", sr, "dt", str(dt.datetime.now())
 
-			avail = g_disk.f_bsize * g_disk.f_bavail
+# 			avail = g_disk.f_bsize * g_disk.f_bavail
 
-			if avail < (g_first_avail * 3 / 5) :
-				raise KeyboardInterrupt
+# 			if avail < (g_first_avail * 3 / 5) :
+# 				raise KeyboardInterrupt
 
-		except KeyboardInterrupt:
-			break
+# 		except KeyboardInterrupt:
+# 			break
 
 def receiver():
 
-	if ret_flag == False:
-		time.sleep(1000)
+	shared_data = sysv_ipc.SharedMemory(1234)
 
-	while True:
+	memory = shared_data.read()
 
-#		print("Nice to meet you!")
-		X_data = room_buff[0]
+	room_buff = list()
 
-		X = tf.placeholder(tf.float32)
+	for i in range(0, 100):
+		room_buff.append(map(int, memory))
+	print "room_buff: ", room_buff, ", type: ", type(memory)
+	room_buff = sum(room_buff, [])
 
-		W1 = tf.Variable(tf.random_uniform([100, 50], -1., 1.))
-		W2 = tf.Variable(tf.random_uniform([50, 2], -1., 1.))
-		b1 = tf.Variable(tf.zeros([50]))
-		b2 = tf.Variable(tf.zeros([2]))
+# 	global ret_flag
 
-		L1 = tf.add(tf.matmul(X, W1), b1)
-		Y = tf.nn.softmax(tf.matmul(L1, W2) + b2)
+# 	if ret_flag == False:
+# 		time.sleep(2000)
 
-		sess = tf.Session()
+	X_data = room_buff[0]
 
-		#tf.reset_default_graph()
-		with tf.Session() as sess:
-			saver = tf.train.Saver()
-			sess.run(tf.global_variables_initializer())
+# #		print("Nice to meet you!")
+		# X_data = room_buff[0]
 
-			ckpt_path = saver.restore(sess, tf.train.latest_checkpoint("./model"))
-			init_op = tf.global_variables_initializer()
-			sess.run(init_op)
-			predictions = sess.run(Y, feed_dict={X:X_data})
+		# X = tf.placeholder(tf.float32)
 
-			print(predictions)
+		# W1 = tf.Variable(tf.random_uniform([100, 50], -1., 1.))
+		# W2 = tf.Variable(tf.random_uniform([50, 2], -1., 1.))
+		# b1 = tf.Variable(tf.zeros([50]))
+		# b2 = tf.Variable(tf.zeros([2]))
 
-			for i in range(len(predictions)):
-				if str(predictions[i]) == "[1. 0.]":
-					print('exist')
-				else:
-					print('not exist')
+		# L1 = tf.add(tf.matmul(X, W1), b1)
+		# Y = tf.nn.softmax(tf.matmul(L1, W2) + b2)
 
-			ret_flag = True
+		# sess = tf.Session()
+
+		# #tf.reset_default_graph()
+		# with tf.Session() as sess:
+		# 	saver = tf.train.Saver()
+		# 	sess.run(tf.global_variables_initializer())
+
+		# 	ckpt_path = saver.restore(sess, tf.train.latest_checkpoint("./model"))
+		# 	init_op = tf.global_variables_initializer()
+		# 	sess.run(init_op)
+		# 	predictions = sess.run(Y, feed_dict={X:X_data})
+
+		# 	print(predictions)
+
+		# 	for i in range(len(predictions)):
+		# 		if str(predictions[i]) == "[1. 0.]":
+		# 			print('exist')
+		# 		else:
+		# 			print('not exist')
+
+		# 	ret_flag = True
+
+		# 	del room_buff[0]
 
 if __name__ == '__main__':
 	#signal.signal(signal.SIGUSR1, getpir)
 
 	#os.kill(os.getpid(),signal.SIGUSR1)
-	pid = os.fork()
+#	pid = os.fork()
 
 	mydt = 0
 	pdt = 0
@@ -173,8 +199,12 @@ if __name__ == '__main__':
 
 	start_time = time.time()
 
-	p_send.start()
-	p_recv.start()
+	if pid == 0:
+		p_send.start()
+		p_recv.start()
+
+		p_send.join()	
+		p_recv.join()
 
 	# if pid == 0:
 	# 	p_send.start()
@@ -187,11 +217,9 @@ if __name__ == '__main__':
 	# 		print "ret_flag(in)", ret_flag
 	# 		p_recv.start()
 
-	p_send.join()	
-	p_recv.join()
 
 #	cam.stop_preview()
 #	cam.stop_recording()
 #	cam.close()
 
-	f.close()
+#	f.close()
