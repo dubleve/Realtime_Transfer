@@ -1,5 +1,6 @@
 import threading 
 import picamera
+from pqueue import Queue
 from mcp3208 import MCP3208
 import datetime as dt
 import time
@@ -30,6 +31,10 @@ g_first_avail = g_disk.f_bsize * g_disk.f_bavail
 s_buff = ''
 r_buff = list()
 room_buff = list()
+
+q = Queue("tmpBuffer")
+
+firebase = firebase.FirebaseApplication('https://pnu-dubleve.firebaseio.com')
 
 class NumpyEncoder(json.JSONEncoder):
 	def default(self, obj):
@@ -75,6 +80,7 @@ class Sender(threading.Thread):
 							buff.reverse()
 
 							s_buff = sum(s_buff, []) # 2 dimension list to 1 dimension list
+							q.put_nowait(s_buff)
 
 							print "s_buff: ", s_buff
 
@@ -89,7 +95,7 @@ class Sender(threading.Thread):
 				if cdt==0: # write datas in file for 1 second
 	#				f.write(data)
 					data = ""
-					print "sr", sr, "dt", str(dt.datetime.now())
+	#				print "sr", sr, "dt", str(dt.datetime.now())
 
 				avail = g_disk.f_bsize * g_disk.f_bavail
 
@@ -102,9 +108,17 @@ class Sender(threading.Thread):
 class Receiver(threading.Thread):
 	def run(self):
 
+		time.sleep(3)
+
+		global room_buff
+		r_buff = q.get_nowait()
+		print "r_buff: ", r_buff
+		room_buff.append(map(int, r_buff))
+		room_buff = sum(room_buff, [])
+
 		while True:
 	#		print("Nice to meet you!")
-			X_data = room_buff[0]
+			X_data = room_buff
 
 			X = tf.placeholder(tf.float32)
 
@@ -137,7 +151,6 @@ class Receiver(threading.Thread):
 						print('not exist')
 
 #Import Datasets & set datasets
-firebase = firebase.FirebaseApplication('https://pnu-dubleve.firebaseio.com')
 
 if __name__ == '__main__':
 
