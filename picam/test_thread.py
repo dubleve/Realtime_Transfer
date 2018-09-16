@@ -16,6 +16,8 @@ from firebase import firebase
 
 adc = MCP3208()
 
+cnt = 0
+
 g_data = " "
 g_cnt = 0
 g_dtime = 0
@@ -32,7 +34,7 @@ s_buff = ''
 r_buff = list()
 room_buff = list()
 
-q = Queue("tmpBuffer")
+q = Queue("Buffer")
 
 firebase = firebase.FirebaseApplication('https://pnu-dubleve.firebaseio.com')
 
@@ -66,7 +68,7 @@ class Sender(threading.Thread):
 					pdt = cdt
 						
 					buff.append(map(int, data.split()))
-					print "num of buff: ", len(buff), ", cnt: ", cnt
+#					print "num of buff: ", len(buff), ", cnt: ", cnt
 							
 					if len(buff)>=100 :
 						ret_flag = True
@@ -80,9 +82,10 @@ class Sender(threading.Thread):
 							buff.reverse()
 
 							s_buff = sum(s_buff, []) # 2 dimension list to 1 dimension list
+							print "s_buff len: ", len(s_buff)
 							q.put_nowait(s_buff)
 
-							print "s_buff: ", s_buff
+#							print "s_buff: ", s_buff
 
 	#						room_buff.append(s_buff)
 
@@ -112,13 +115,14 @@ class Receiver(threading.Thread):
 
 		global room_buff
 		r_buff = q.get_nowait()
-		print "r_buff: ", r_buff
+		print "r_buff: ", r_buff, ", len", len(r_buff)
 		room_buff.append(map(int, r_buff))
-		room_buff = sum(room_buff, [])
+#		room_buff = sum(room_buff, [])
 
 		while True:
 	#		print("Nice to meet you!")
 			X_data = room_buff
+			print "X_data: ", X_data, ", len: ", len(X_data)
 
 			X = tf.placeholder(tf.float32)
 
@@ -167,7 +171,7 @@ if __name__ == '__main__':
 #	s_buff = list() # buffer for sending datas
 
 	first_idx = 0
-	last_idx = first_idx + 99
+	last_idx = first_idx + 100
 
 	start_time = time.time()
 
@@ -175,5 +179,7 @@ if __name__ == '__main__':
 	recv.start()
 	send.join()	
 	recv.join()
+
+	queue_service.delete_queue("Buffer")
 
 #	f.close()
